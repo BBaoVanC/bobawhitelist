@@ -57,10 +57,10 @@ public class bobawhitelist {
 
     public void initialize() {
         EventManager eventManager = server.getEventManager();
-        CommandManager commandManager = server.getCommandManager();
-
         eventManager.register(this, new ListenerLogin(this.config));
-        WhitelistCommand.createBrigadierCommand(this.config, commandManager);
+
+        CommandManager commandManager = server.getCommandManager();
+        new WhitelistCommand(this.config).register();
     }
 
     @Subscribe

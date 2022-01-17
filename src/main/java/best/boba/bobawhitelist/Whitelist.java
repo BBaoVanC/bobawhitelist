@@ -1,11 +1,11 @@
 package best.boba.bobawhitelist;
 
-import best.boba.bobawhitelist.json.WhitelistJSON;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.typesafe.config.ConfigException;
+import com.google.gson.reflect.TypeToken;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
@@ -15,6 +15,8 @@ public class Whitelist {
     private final List<WhitelistPlayer> whitelistPlayerList;
     private final HashMap<String, WhitelistPlayer> whitelistUsernameMap;
     private final HashMap<UUID, WhitelistPlayer> whitelistUUIDMap;
+
+    private static final Type jsonType = new TypeToken<List<WhitelistPlayer>>(){}.getType();
 
     public Whitelist(Path whitelistFile) throws IOException {
         this.whitelistFile = whitelistFile;
@@ -34,21 +36,21 @@ public class Whitelist {
         saveJSON();
     }
 
-    public void saveJSON() throws IOException {
+    private void saveJSON() throws IOException {
         try (Writer writer = new FileWriter(whitelistFile.toString())) {
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            gson.toJson(new WhitelistJSON(this.whitelistPlayerList), writer);
+            gson.toJson(this.whitelistPlayerList, writer);
         }
     }
 
-    public List<WhitelistPlayer> loadJSON() throws IOException {
+    private List<WhitelistPlayer> loadJSON() throws IOException {
         try (Reader reader = new FileReader(whitelistFile.toString())) {
             Gson gson = new Gson();
-            WhitelistJSON json = gson.fromJson(reader, WhitelistJSON.class);
+            List<WhitelistPlayer> json = gson.fromJson(reader, jsonType);
             if (json == null) {
                 return new ArrayList<>();
             }
-            return json.getWhitelistPlayerList();
+            return json;
         }
     }
 

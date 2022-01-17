@@ -16,10 +16,13 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
-
 public class WhitelistCommand {
-    public static void createBrigadierCommand(Config config, CommandManager commandManager) {
+    private final Config config;
+    public WhitelistCommand(Config config) {
+        this.config = config;
+    }
+
+    public void register() {
         LiteralCommandNode<CommandSource> rootNode = LiteralArgumentBuilder
                 .<CommandSource>literal("vwhitelist")
                 .requires(sender -> sender.hasPermission("bobawhitelist.whitelist"))
@@ -41,7 +44,7 @@ public class WhitelistCommand {
                             }
 
                             try {
-                                config.getWhitelist().add(whitelistPlayer);
+                                this.config.getWhitelist().add(whitelistPlayer);
                                 sender.sendMessage(Component.text(
                                         String.format("Added %s (%s) to the whitelist",
                                                 whitelistPlayer.getUsername(), whitelistPlayer.getUUID())
@@ -63,7 +66,7 @@ public class WhitelistCommand {
                 .then(RequiredArgumentBuilder
                         .<CommandSource, String>argument("player", StringArgumentType.string())
                         .suggests(((context, builder) -> {
-                            for (String username : config.getWhitelist().getUsernames()) {
+                            for (String username : this.config.getWhitelist().getUsernames()) {
                                 builder.suggest(username);
                             }
                             return builder.buildFuture();
@@ -71,7 +74,7 @@ public class WhitelistCommand {
                         .executes(c -> {
                             CommandSource sender = c.getSource();
                             String username = c.getArgument("player", String.class);
-                            Whitelist whitelist = config.getWhitelist();
+                            Whitelist whitelist = this.config.getWhitelist();
                             if (!whitelist.has(username)) {
                                 sender.sendMessage(Component.text(
                                         "Player is not whitelisted"
@@ -80,7 +83,7 @@ public class WhitelistCommand {
                             }
 
                             try {
-                                config.getWhitelist().remove(username);
+                                this.config.getWhitelist().remove(username);
                                 sender.sendMessage(Component.text(
                                         "Removed " + username + " from the whitelist"
                                 ));
@@ -100,7 +103,7 @@ public class WhitelistCommand {
                 .<CommandSource>literal("list")
                 .executes(c -> {
                     CommandSource sender = c.getSource();
-                    List<WhitelistPlayer> whitelist = config.getWhitelist().getList();
+                    List<WhitelistPlayer> whitelist = this.config.getWhitelist().getList();
                     int whitelistCount = whitelist.size();
                     List<String> whitelistedPlayers = new ArrayList<>();
                     for (WhitelistPlayer whitelistPlayer : whitelist) {
@@ -117,10 +120,37 @@ public class WhitelistCommand {
                     return 1;
                 }).build();
 
+        LiteralCommandNode<CommandSource> reloadCommand = LiteralArgumentBuilder
+                .<CommandSource>literal("reload")
+                .executes(context -> {
+                    CommandSource sender = context.getSource();
+                    try {
+                        this.config.reloadWhitelist();
+                        sender.sendMessage(Component.text(
+                                "Reloaded whitelist from disk"
+                        ));
+                        return 1;
+                    }
+                    catch (IOException e) {
+                        e.printStackTrace();
+                        sender.sendMessage(Component.text(
+                                "Error reloading whitelist from disk: " + e.getMessage()
+                        ).color(NamedTextColor.RED));
+
+                        sender.sendMessage(Component.text(
+                                "See the console for more information."
+                        ).color(NamedTextColor.RED));
+                        return 0;
+                    }
+                })
+                .build();
+
         rootNode.addChild(addCommand);
         rootNode.addChild(listCommand);
         rootNode.addChild(removeCommand);
+        rootNode.addChild(reloadCommand);
 
+        CommandManager commandManager = this.config.getServer().getCommandManager();
         BrigadierCommand brigadierCommand = new BrigadierCommand(rootNode);
         CommandMeta commandMeta = commandManager.metaBuilder(brigadierCommand)
                         .aliases("vwl").build();

@@ -2,9 +2,7 @@ package best.boba.bobawhitelist;
 
 import com.velocitypowered.api.proxy.ProxyServer;
 
-import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
@@ -14,7 +12,7 @@ public class Config {
     private final Logger logger;
     private final Path dataDirectory;
     private final Path whitelistFile;
-    private final Whitelist whitelist;
+    private Whitelist whitelist;
 
     public Config(ProxyServer server, Logger logger, Path dataDirectory) throws IOException {
         this.server = server;
@@ -43,5 +41,9 @@ public class Config {
 
     public Whitelist getWhitelist() {
         return this.whitelist;
+    }
+
+    public void reloadWhitelist() throws IOException {
+        this.whitelist = new Whitelist((this.whitelistFile));
     }
 }
