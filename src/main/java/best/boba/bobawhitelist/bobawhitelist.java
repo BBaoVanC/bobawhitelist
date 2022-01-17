@@ -9,6 +9,7 @@ import com.velocitypowered.api.event.proxy.ProxyReloadEvent;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.proxy.ProxyServer;
 
+import java.nio.file.Path;
 import java.util.logging.Logger;
 
 @Plugin(id = "bobawhitelist",
@@ -20,11 +21,17 @@ import java.util.logging.Logger;
 public class bobawhitelist {
     private final ProxyServer server;
     private final Logger logger;
+    //private final Path dataDirectory;
+    private final Config config;
 
     @Inject
     public bobawhitelist(ProxyServer server, Logger logger) {
+    //public bobawhitelist(ProxyServer server, Logger logger, Path dataDirectory) {
         this.server = server;
         this.logger = logger;
+        //this.dataDirectory = dataDirectory;
+
+        this.config = new Config();
     }
 
     public void initialize() {
@@ -32,7 +39,7 @@ public class bobawhitelist {
         CommandManager commandManager = server.getCommandManager();
 
         eventManager.register(this, new ListenerPostLogin());
-        WhitelistCommand.createBrigadierCommand(commandManager);
+        WhitelistCommand.createBrigadierCommand(this.server, this.config, commandManager);
     }
 
     @Subscribe
