@@ -6,19 +6,20 @@ import com.mojang.brigadier.builder.RequiredArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import com.velocitypowered.api.command.BrigadierCommand;
 import com.velocitypowered.api.command.CommandManager;
+import com.velocitypowered.api.command.CommandMeta;
 import com.velocitypowered.api.command.CommandSource;
-import com.velocitypowered.api.proxy.ProxyServer;
 import net.kyori.adventure.text.Component;
 
 import net.kyori.adventure.text.format.NamedTextColor;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.mojang.brigadier.arguments.IntegerArgumentType.integer;
 
 public class WhitelistCommand {
-    public static void createBrigadierCommand(ProxyServer server, Config config, CommandManager commandManager) {
+    public static void createBrigadierCommand(Config config, CommandManager commandManager) {
         LiteralCommandNode<CommandSource> rootNode = LiteralArgumentBuilder
                 .<CommandSource>literal("vwhitelist")
                 .requires(sender -> sender.hasPermission("bobawhitelist.whitelist"))
@@ -39,12 +40,21 @@ public class WhitelistCommand {
                                 return 0;
                             }
 
-                            config.getWhitelist().add(whitelistPlayer);
-                            sender.sendMessage(Component.text(
-                                    String.format("Added %s (%s) to the whitelist",
-                                            whitelistPlayer.getUsername(), whitelistPlayer.getUUID())
-                            ));
-                            return 1;
+                            try {
+                                config.getWhitelist().add(whitelistPlayer);
+                                sender.sendMessage(Component.text(
+                                        String.format("Added %s (%s) to the whitelist",
+                                                whitelistPlayer.getUsername(), whitelistPlayer.getUUID())
+                                ));
+                                return 1;
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                                sender.sendMessage(Component.text(
+                                        "Failed to get the online UUID of " + username
+                                ));
+                                return 0;
+                            }
                         })
                 ).build();
 
@@ -68,11 +78,21 @@ public class WhitelistCommand {
                                 ).color(NamedTextColor.RED));
                                 return 0;
                             }
-                            config.getWhitelist().remove(username);
-                            sender.sendMessage(Component.text(
-                                    "Removed " + username + " from the whitelist"
-                            ));
-                            return 1;
+
+                            try {
+                                config.getWhitelist().remove(username);
+                                sender.sendMessage(Component.text(
+                                        "Removed " + username + " from the whitelist"
+                                ));
+                                return 1;
+                            }
+                            catch (IOException e) {
+                                e.printStackTrace();
+                                sender.sendMessage(Component.text(
+                                        "Failed to save whitelist.json."
+                                ).color(NamedTextColor.RED));
+                                return 0;
+                            }
                         })
                 ).build();
 
@@ -100,6 +120,10 @@ public class WhitelistCommand {
         rootNode.addChild(addCommand);
         rootNode.addChild(listCommand);
         rootNode.addChild(removeCommand);
-        commandManager.register(new BrigadierCommand(rootNode));
+
+        BrigadierCommand brigadierCommand = new BrigadierCommand(rootNode);
+        CommandMeta commandMeta = commandManager.metaBuilder(brigadierCommand)
+                        .aliases("vwl").build();
+        commandManager.register(commandMeta, brigadierCommand);
     }
 }

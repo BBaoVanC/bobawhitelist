@@ -7,8 +7,11 @@ import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyReloadEvent;
 import com.velocitypowered.api.plugin.Plugin;
+import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
 
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Logger;
 
@@ -21,25 +24,43 @@ import java.util.logging.Logger;
 public class bobawhitelist {
     private final ProxyServer server;
     private final Logger logger;
-    //private final Path dataDirectory;
+    private final Path dataDirectory;
     private final Config config;
 
     @Inject
-    public bobawhitelist(ProxyServer server, Logger logger) {
-    //public bobawhitelist(ProxyServer server, Logger logger, Path dataDirectory) {
+    public bobawhitelist(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
         this.server = server;
         this.logger = logger;
-        //this.dataDirectory = dataDirectory;
+        this.dataDirectory = dataDirectory;
 
-        this.config = new Config();
+        if (!Files.exists(this.dataDirectory)) {
+            try {
+                Files.createDirectory(this.dataDirectory);
+            }
+            catch (IOException e) {
+                this.logger.severe("Could not create plugin data directory: " + e.getMessage());
+                this.config = null;
+                return;
+            }
+        }
+
+        Config config;
+        try {
+            config = new Config(server, logger, dataDirectory);
+        }
+        catch (IOException e) {
+            this.logger.severe("Could not set up whitelist JSON: " + e.getMessage());
+            config = null;
+        }
+        this.config = config;
     }
 
     public void initialize() {
         EventManager eventManager = server.getEventManager();
         CommandManager commandManager = server.getCommandManager();
 
-        eventManager.register(this, new ListenerPostLogin());
-        WhitelistCommand.createBrigadierCommand(this.server, this.config, commandManager);
+        eventManager.register(this, new ListenerLogin(this.config));
+        WhitelistCommand.createBrigadierCommand(this.config, commandManager);
     }
 
     @Subscribe

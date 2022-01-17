@@ -1,10 +1,44 @@
 package best.boba.bobawhitelist;
 
+import com.velocitypowered.api.proxy.ProxyServer;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.logging.Logger;
+
 public class Config {
+    private final ProxyServer server;
+    private final Logger logger;
+    private final Path dataDirectory;
+    private final Path whitelistFile;
     private final Whitelist whitelist;
 
-    public Config() {
-        this.whitelist = new Whitelist();
+    public Config(ProxyServer server, Logger logger, Path dataDirectory) throws IOException {
+        this.server = server;
+        this.logger = logger;
+        this.dataDirectory = dataDirectory;
+        this.whitelistFile = Paths.get(this.dataDirectory.toString(), "whitelist.json");
+
+        this.whitelist = new Whitelist(this.whitelistFile);
+    }
+
+    public ProxyServer getServer() {
+        return server;
+    }
+
+    public Logger getLogger() {
+        return logger;
+    }
+
+    public Path getDataDirectory() {
+        return dataDirectory;
+    }
+
+    public Path getWhitelistFile() {
+        return whitelistFile;
     }
 
     public Whitelist getWhitelist() {
