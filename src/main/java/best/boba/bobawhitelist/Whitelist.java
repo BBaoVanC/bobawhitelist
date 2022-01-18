@@ -3,6 +3,7 @@ package best.boba.bobawhitelist;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
+import org.apache.commons.collections4.map.CaseInsensitiveMap;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -12,25 +13,22 @@ import java.util.*;
 
 public class Whitelist {
     private final Path whitelistFile;
-    private final List<WhitelistPlayer> whitelistPlayerList;
-    private final HashMap<String, WhitelistPlayer> whitelistUsernameMap;
-    private final HashMap<UUID, WhitelistPlayer> whitelistUUIDMap;
+    private final HashMap<UUID, String> whitelistMap;
+    private final CaseInsensitiveMap<String, UUID> whitelistUsernameMap;
 
-    private static final Type jsonType = new TypeToken<List<WhitelistPlayer>>(){}.getType();
+    private static final Type jsonType = new TypeToken<HashMap<UUID, String>>(){}.getType();
 
     public Whitelist(Path whitelistFile) throws IOException {
         this.whitelistFile = whitelistFile;
 
-        this.whitelistUUIDMap = new HashMap<>();
-        this.whitelistUsernameMap = new HashMap<>();
+        this.whitelistUsernameMap = new CaseInsensitiveMap<>();
 
         if (Files.notExists(whitelistFile)) {
-            this.whitelistPlayerList = new ArrayList<>();
+            this.whitelistMap = new HashMap<>();
         } else {
-            this.whitelistPlayerList = loadJSON();
-            for (WhitelistPlayer whitelistPlayer : this.whitelistPlayerList) {
-                this.whitelistUUIDMap.put(whitelistPlayer.getUUID(), whitelistPlayer);
-                this.whitelistUsernameMap.put(whitelistPlayer.getUsername(), whitelistPlayer);
+            this.whitelistMap = loadJSON();
+            for (Map.Entry<UUID, String> entry : this.whitelistMap.entrySet()) {
+                this.whitelistUsernameMap.put(entry.getValue(), entry.getKey());
             }
         }
         saveJSON();
@@ -39,48 +37,40 @@ public class Whitelist {
     private void saveJSON() throws IOException {
         try (Writer writer = new FileWriter(whitelistFile.toString())) {
             Gson gson = new GsonBuilder().setPrettyPrinting().create();
-            gson.toJson(this.whitelistPlayerList, writer);
+            gson.toJson(this.whitelistMap, writer);
         }
     }
 
-    private List<WhitelistPlayer> loadJSON() throws IOException {
+    private HashMap<UUID, String> loadJSON() throws IOException {
         try (Reader reader = new FileReader(whitelistFile.toString())) {
             Gson gson = new Gson();
-            List<WhitelistPlayer> json = gson.fromJson(reader, jsonType);
+            HashMap<UUID, String> json = gson.fromJson(reader, jsonType);
             if (json == null) {
-                return new ArrayList<>();
+                return new HashMap<>();
             }
             return json;
         }
     }
 
     public WhitelistPlayer get(UUID uuid) {
-        return this.whitelistUUIDMap.get(uuid);
+        return new WhitelistPlayer(uuid, this.whitelistMap.get(uuid));
     }
 
     public WhitelistPlayer get(String username) {
-        return this.whitelistUsernameMap.get(username);
+        return new WhitelistPlayer(this.whitelistUsernameMap.get(username), username);
     }
 
     public Set<UUID> getUUIDs() {
-        return this.whitelistUUIDMap.keySet();
+        return this.whitelistMap.keySet();
     }
 
     public Set<String> getUsernames() {
         return this.whitelistUsernameMap.keySet();
     }
 
-    public List<WhitelistPlayer> getList() {
-        return this.whitelistPlayerList;
-    }
-
-
-    public boolean has(WhitelistPlayer whitelistPlayer) {
-        return this.whitelistPlayerList.contains(whitelistPlayer);
-    }
 
     public boolean has(UUID uuid) {
-        return this.whitelistUUIDMap.containsKey(uuid);
+        return this.whitelistMap.containsKey(uuid);
     }
 
     public boolean has(String username) {
@@ -89,38 +79,27 @@ public class Whitelist {
 
 
     public void add(WhitelistPlayer whitelistPlayer) throws IOException {
-        this.whitelistPlayerList.add(whitelistPlayer);
-        this.whitelistUsernameMap.put(whitelistPlayer.getUsername(), whitelistPlayer);
-        this.whitelistUUIDMap.put(whitelistPlayer.getUUID(), whitelistPlayer);
-
+        this.whitelistMap.put(whitelistPlayer.uuid(), whitelistPlayer.username());
+        this.whitelistUsernameMap.put(whitelistPlayer.username(), whitelistPlayer.uuid());
         saveJSON();
     }
 
     public void add(UUID uuid, String username) throws IOException {
-        WhitelistPlayer whitelistPlayer = new WhitelistPlayer(uuid, username);
-        this.whitelistPlayerList.add(whitelistPlayer);
-        this.whitelistUsernameMap.put(username, whitelistPlayer);
-        this.whitelistUUIDMap.put(uuid, whitelistPlayer);
-
+        this.whitelistMap.put(uuid, username);
+        this.whitelistUsernameMap.put(username, uuid);
         saveJSON();
     }
 
 
     public void remove(UUID uuid) throws IOException {
-        WhitelistPlayer whitelistPlayer = this.whitelistUUIDMap.get(uuid);
-        this.whitelistPlayerList.remove(whitelistPlayer);
-        this.whitelistUUIDMap.remove(uuid);
-        this.whitelistUsernameMap.remove(whitelistPlayer.getUsername());
-
+        this.whitelistUsernameMap.remove(this.whitelistMap.get(uuid));
+        this.whitelistMap.remove(uuid);
         saveJSON();
     }
 
     public void remove(String username) throws IOException {
-        WhitelistPlayer whitelistPlayer = this.whitelistUsernameMap.get(username);
-        this.whitelistPlayerList.remove(whitelistPlayer);
+        this.whitelistMap.remove(this.whitelistUsernameMap.get(username));
         this.whitelistUsernameMap.remove(username);
-        this.whitelistUUIDMap.remove(whitelistPlayer.getUUID());
-
         saveJSON();
     }
 }

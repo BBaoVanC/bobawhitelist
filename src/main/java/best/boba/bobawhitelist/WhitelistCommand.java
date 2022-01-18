@@ -47,7 +47,7 @@ public class WhitelistCommand {
                                 this.config.getWhitelist().add(whitelistPlayer);
                                 sender.sendMessage(Component.text(
                                         String.format("Added %s (%s) to the whitelist",
-                                                whitelistPlayer.getUsername(), whitelistPlayer.getUUID())
+                                                whitelistPlayer.username(), whitelistPlayer.uuid())
                                 ));
                                 return 1;
                             }
