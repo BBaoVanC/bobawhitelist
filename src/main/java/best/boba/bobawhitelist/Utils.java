@@ -11,14 +11,25 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class Utils {
+    public static List<String> getUsernamesFromUUIDs(UsernameCache cache, List<UUID> uuidList) {
+        List<String> result = new ArrayList<>();
+        for (UUID uuid : uuidList) {
+            result.add(cache.getUsername(uuid));
+        }
+        return result;
+    }
+
     public static UUID getOfflineUUID(String username) {
         return UuidUtils.generateOfflinePlayerUuid(username);
     }
+
     // https://github.com/xElementzx/VelocityUuidGetter/blob/ce8d51f1897f1fbeeec9ca6d4e69c3f90fa33758/src/main/java/me/xelementzx/velocityuuidgetter/commands/GetUuidCommand.java#L48-L59
     public static @Nullable WhitelistPlayer getOnlinePlayer(String username) {
         try {
@@ -39,12 +50,37 @@ public class Utils {
 
                 Optional<String> optionalUsernameString = parseJson(jsonObject.get("name"), String.class);
                 if (optionalUsernameString.isEmpty()) {
-                    System.out.println("username emptykkkkk");
                     return null;
                 }
                 String newUsername = optionalUsernameString.get();
 
                 return new WhitelistPlayer(uuid, newUsername);
+            }
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public static @Nullable WhitelistPlayer getOnlinePlayer(UUID uuid) {
+        try {
+            URL url = new URL("https://api.mojang.com/user/profile/" + uuid);
+            URLConnection urlConnection = url.openConnection();
+            try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()))) {
+                Optional<JsonObject> optionalJsonObject = parseJson(bufferedReader.lines().collect(Collectors.joining()), JsonObject.class);
+                if (optionalJsonObject.isEmpty()) {
+                    return null;
+                }
+                JsonObject jsonObject = optionalJsonObject.get();
+
+                Optional<String> optionalUsernameString = parseJson(jsonObject.get("name"), String.class);
+                if (optionalUsernameString.isEmpty()) {
+                    return null;
+                }
+                String username = optionalUsernameString.get();
+
+                return new WhitelistPlayer(uuid, username);
             }
         }
         catch (Exception e) {

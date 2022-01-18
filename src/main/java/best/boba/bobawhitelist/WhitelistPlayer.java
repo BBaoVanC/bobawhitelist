@@ -4,7 +4,7 @@ import java.util.UUID;
 
 public class WhitelistPlayer {
     private final UUID uuid;
-    private final String username;
+    private String username;
 
     public WhitelistPlayer(UUID uuid, String username) {
         this.uuid = uuid;
@@ -17,5 +17,9 @@ public class WhitelistPlayer {
 
     public String getUsername() {
         return username;
+    }
+
+    public void setUsername(String newUsername) {
+        this.username = newUsername;
     }
 }

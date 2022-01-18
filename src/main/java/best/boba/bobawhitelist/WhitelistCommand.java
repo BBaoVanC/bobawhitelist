@@ -15,6 +15,7 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class WhitelistCommand {
     private final Config config;
@@ -44,7 +45,8 @@ public class WhitelistCommand {
                             }
 
                             try {
-                                this.config.getWhitelist().add(whitelistPlayer);
+                                this.config.getWhitelist().add(whitelistPlayer.getUUID());
+                                this.config.getUsernameCache().add(whitelistPlayer.getUUID(), whitelistPlayer.getUsername());
                                 sender.sendMessage(Component.text(
                                         String.format("Added %s (%s) to the whitelist",
                                                 whitelistPlayer.getUsername(), whitelistPlayer.getUUID())
@@ -72,7 +74,9 @@ public class WhitelistCommand {
                 .then(RequiredArgumentBuilder
                         .<CommandSource, String>argument("player", StringArgumentType.string())
                         .suggests(((context, builder) -> {
-                            for (String username : this.config.getWhitelist().getUsernames()) {
+                            for (String username : Utils.getUsernamesFromUUIDs(
+                                    this.config.getUsernameCache(),
+                                    this.config.getWhitelist().getUUIDs())) {
                                 builder.suggest(username);
                             }
                             return builder.buildFuture();
@@ -80,8 +84,9 @@ public class WhitelistCommand {
                         .executes(c -> {
                             CommandSource sender = c.getSource();
                             String username = c.getArgument("player", String.class);
+                            UUID uuid = this.config.getUsernameCache().getUUID(username);
                             Whitelist whitelist = this.config.getWhitelist();
-                            if (!whitelist.has(username)) {
+                            if (!whitelist.has(uuid)) {
                                 sender.sendMessage(Component.text(
                                         "Player is not whitelisted"
                                 ).color(NamedTextColor.RED));
@@ -89,7 +94,8 @@ public class WhitelistCommand {
                             }
 
                             try {
-                                this.config.getWhitelist().remove(username);
+                                this.config.getWhitelist().remove(uuid);
+                                this.config.getUsernameCache().remove(uuid);
                                 sender.sendMessage(Component.text(
                                         "Removed " + username + " from the whitelist"
                                 ));
@@ -109,11 +115,11 @@ public class WhitelistCommand {
                 .<CommandSource>literal("list")
                 .executes(c -> {
                     CommandSource sender = c.getSource();
-                    List<WhitelistPlayer> whitelist = this.config.getWhitelist().getList();
+                    List<UUID> whitelist = this.config.getWhitelist().getUUIDs();
                     int whitelistCount = whitelist.size();
                     List<String> whitelistedPlayers = new ArrayList<>();
-                    for (WhitelistPlayer whitelistPlayer : whitelist) {
-                        whitelistedPlayers.add(whitelistPlayer.getUsername());
+                    for (UUID uuid : whitelist) {
+                        whitelistedPlayers.add(this.config.getUsernameCache().getUsername(uuid));
                     }
 
                     if (whitelistCount > 0) {
@@ -125,6 +131,24 @@ public class WhitelistCommand {
                     }
                     return 1;
                 }).build();
+
+        // the below command was for testing
+//        LiteralCommandNode<CommandSource> changeNameCommand = LiteralArgumentBuilder
+//                .<CommandSource>literal("changeName")
+//                .then(RequiredArgumentBuilder
+//                        .<CommandSource, String>argument("oldName", StringArgumentType.string())
+//                        .then(RequiredArgumentBuilder
+//                                .<CommandSource, String>argument("newName", StringArgumentType.string())
+//                                .executes(context -> {
+//                                    CommandSource sender = context.getSource();
+//                                    String oldName = context.getArgument("oldName", String.class);
+//                                    String newName = context.getArgument("newName", String.class);
+//                                    UUID oldUUID = this.config.getUsernameCache().getUUID(oldName);
+//                                    this.config.getUsernameCache().updateUsername(oldUUID, newName);
+//                                    return 1;
+//                                })
+//                        )
+//                ).build();
 
         LiteralCommandNode<CommandSource> reloadCommand = LiteralArgumentBuilder
                 .<CommandSource>literal("reload")
@@ -154,6 +178,7 @@ public class WhitelistCommand {
         rootNode.addChild(addCommand);
         rootNode.addChild(listCommand);
         rootNode.addChild(removeCommand);
+//        rootNode.addChild(changeNameCommand);
         rootNode.addChild(reloadCommand);
 
         CommandManager commandManager = this.config.getServer().getCommandManager();

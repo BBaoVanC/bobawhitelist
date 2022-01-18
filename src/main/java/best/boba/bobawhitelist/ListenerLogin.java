@@ -24,6 +24,13 @@ public class ListenerLogin {
             event.setResult(ResultedEvent.ComponentResult.denied(Component.text(
                     "You are not whitelisted!"
             ).color(NamedTextColor.RED)));
+            return;
+        }
+
+        if (!player.getUsername().equals(this.config.getUsernameCache().getUsername(uuid))) {
+            this.config.getUsernameCache().updateUsername(player.getUniqueId(), player.getUsername());
+            this.config.getLogger().info(
+                    String.format("Updated cached username of %s to %s", player.getUniqueId(), player.getUsername()));
         }
     }
 }
