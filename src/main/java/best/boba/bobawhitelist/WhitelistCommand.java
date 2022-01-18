@@ -58,6 +58,12 @@ public class WhitelistCommand {
                                 ));
                                 return 0;
                             }
+                            catch (DuplicatePlayerException e) {
+                                sender.sendMessage(Component.text(
+                                        "That player is already whitelisted"
+                                ).color(NamedTextColor.RED));
+                                return 0;
+                            }
                         })
                 ).build();
 

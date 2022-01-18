@@ -88,20 +88,26 @@ public class Whitelist {
     }
 
 
-    public void add(WhitelistPlayer whitelistPlayer) throws IOException {
+    public void add(WhitelistPlayer whitelistPlayer) throws IOException, DuplicatePlayerException {
+        if (has(whitelistPlayer.getUUID())) {
+            throw new DuplicatePlayerException();
+        }
+
         this.whitelistPlayerList.add(whitelistPlayer);
         this.whitelistUsernameMap.put(whitelistPlayer.getUsername(), whitelistPlayer);
         this.whitelistUUIDMap.put(whitelistPlayer.getUUID(), whitelistPlayer);
-
         saveJSON();
     }
 
-    public void add(UUID uuid, String username) throws IOException {
+    public void add(UUID uuid, String username) throws IOException, DuplicatePlayerException {
+        if (has(uuid)) {
+            throw new DuplicatePlayerException();
+        }
+
         WhitelistPlayer whitelistPlayer = new WhitelistPlayer(uuid, username);
         this.whitelistPlayerList.add(whitelistPlayer);
         this.whitelistUsernameMap.put(username, whitelistPlayer);
         this.whitelistUUIDMap.put(uuid, whitelistPlayer);
-
         saveJSON();
     }
 
@@ -111,7 +117,6 @@ public class Whitelist {
         this.whitelistPlayerList.remove(whitelistPlayer);
         this.whitelistUUIDMap.remove(uuid);
         this.whitelistUsernameMap.remove(whitelistPlayer.getUsername());
-
         saveJSON();
     }
 
@@ -120,7 +125,6 @@ public class Whitelist {
         this.whitelistPlayerList.remove(whitelistPlayer);
         this.whitelistUsernameMap.remove(username);
         this.whitelistUUIDMap.remove(whitelistPlayer.getUUID());
-
         saveJSON();
     }
 }
