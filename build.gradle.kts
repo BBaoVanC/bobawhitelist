@@ -3,7 +3,7 @@ plugins {
 }
 
 group = "best.boba"
-version = "2.0.1"
+version = "2.1"
 
 repositories {
     mavenCentral()
@@ -18,6 +18,8 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     compileOnly("com.velocitypowered:velocity-api:3.0.1")
     annotationProcessor("com.velocitypowered:velocity-api:3.0.1")
+
+    compileOnly("net.luckperms:api:5.3")
 }
 
 tasks.getByName<Test>("test") {

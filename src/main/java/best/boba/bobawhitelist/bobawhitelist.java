@@ -6,6 +6,7 @@ import com.velocitypowered.api.event.EventManager;
 import com.velocitypowered.api.event.Subscribe;
 import com.velocitypowered.api.event.proxy.ProxyInitializeEvent;
 import com.velocitypowered.api.event.proxy.ProxyReloadEvent;
+import com.velocitypowered.api.plugin.Dependency;
 import com.velocitypowered.api.plugin.Plugin;
 import com.velocitypowered.api.plugin.annotation.DataDirectory;
 import com.velocitypowered.api.proxy.ProxyServer;
@@ -17,15 +18,19 @@ import java.util.logging.Logger;
 
 @Plugin(id = "bobawhitelist",
         name = "bobawhitelist",
-        version = "2.0.1",
+        version = "2.1",
         url = "https://github.com/bobacraft/bobawhitelist",
         authors = {"bbaovanc"},
-        description = "Network-wide whitelist plugin for Velocity")
+        description = "Network-wide whitelist plugin for Velocity",
+        dependencies = {
+            @Dependency(id = "luckperms")
+        }
+)
 public class bobawhitelist {
     private final ProxyServer server;
     private final Logger logger;
     private final Path dataDirectory;
-    private final Config config;
+    private Config config;
 
     @Inject
     public bobawhitelist(ProxyServer server, Logger logger, @DataDirectory Path dataDirectory) {
@@ -40,10 +45,11 @@ public class bobawhitelist {
             catch (IOException e) {
                 this.logger.severe("Could not create plugin data directory: " + e.getMessage());
                 this.config = null;
-                return;
             }
         }
+    }
 
+    public void initialize() {
         Config config;
         try {
             config = new Config(server, logger, dataDirectory);
@@ -52,10 +58,8 @@ public class bobawhitelist {
             this.logger.severe("Could not set up whitelist JSON: " + e.getMessage());
             config = null;
         }
-        this.config = config;
-    }
 
-    public void initialize() {
+        this.config = config;
         EventManager eventManager = server.getEventManager();
         eventManager.register(this, new ListenerLogin(this.config));
 
