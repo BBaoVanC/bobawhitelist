@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 @Plugin(id = "bobawhitelist",
         name = "bobawhitelist",
-        version = "2.0",
+        version = "2.0.1",
         url = "https://github.com/bobacraft/bobawhitelist",
         authors = {"bbaovanc"},
         description = "Network-wide whitelist plugin for Velocity")
