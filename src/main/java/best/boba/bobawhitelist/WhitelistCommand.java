@@ -77,7 +77,9 @@ public class WhitelistCommand {
                             for (String username : Utils.getUsernamesFromUUIDs(
                                     this.config.getUsernameCache(),
                                     this.config.getWhitelist().getUUIDs())) {
-                                builder.suggest(username);
+                                if (username.toLowerCase().startsWith(builder.getRemainingLowerCase())) {
+                                    builder.suggest(username);
+                                }
                             }
                             return builder.buildFuture();
                         }))
