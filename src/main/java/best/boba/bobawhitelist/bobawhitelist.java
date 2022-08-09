@@ -61,6 +61,7 @@ public class bobawhitelist {
 
         CommandManager commandManager = server.getCommandManager();
         new WhitelistCommand(this.config).register();
+        new KickCommand(this.server).register();
     }
 
     @Subscribe
