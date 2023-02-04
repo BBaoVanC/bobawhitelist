@@ -73,7 +73,7 @@ public class WhitelistCommand {
                 .<CommandSource>literal("remove")
                 .then(RequiredArgumentBuilder
                         .<CommandSource, String>argument("player", StringArgumentType.string())
-                        .suggests(((context, builder) -> {
+                        .suggests((context, builder) -> {
                             for (String username : Utils.getUsernamesFromUUIDs(
                                     this.config.getUsernameCache(),
                                     this.config.getWhitelist().getUUIDs())) {
@@ -82,7 +82,7 @@ public class WhitelistCommand {
                                 }
                             }
                             return builder.buildFuture();
-                        }))
+                        })
                         .executes(c -> {
                             CommandSource sender = c.getSource();
                             String username = c.getArgument("player", String.class);
