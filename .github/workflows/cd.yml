@@ -25,7 +25,7 @@ jobs:
           cache-disabled: true
 
       - name: Draft release
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@v0.1.15
         with:
           draft: true
           files: build/libs/*.jar
